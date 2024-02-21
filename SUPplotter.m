@@ -7,6 +7,7 @@
 % Pre-processing of the data should be done by "SUPsorter.m" script
 % which makes sure that the data read by this script is in comma separated
 % .txt files in the form: [Pressure1,Peak1; Pressure2, peak2;...]
+% This is a new line of comment
 % Example:
 %
 % 0,3466.5
