@@ -1,6 +1,6 @@
 %% Welcome to SUP peakplotter
 % This script was written by Mate Garai C'24 in 02/2024
-% This is a temp line
+% This is a temp line for Brian
 % This script is the beginner friendly version of SUPplotter. For a faster
 % version use SUPplotter_adv.m. This script plots Raman, FTIR or related peak 
 % position data as a function of pressure. 
