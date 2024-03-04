@@ -54,18 +54,34 @@ c = [];
 
 %% Ask user which folder they want to work from
 disp("Welcome to SUP plotter! If at any point you wish to exit type 'exit'")
-disp("Choose a folder containing samples: ",'s');
-pathname = uigetdir();
+disp("Choose an Excel file containing samples: ",'s');
+[file,pathname] = uigetfile('*.xlsx');
 
 %Throw error and end script if folder is not specified
-if pathname == 0
-error("No folder selected!")
+if file == 0
+error("No file selected!")
 end
+pathname = strcat(pathname,file);
 disp(pathname);
-files = dir(pathname);
+sheet = sheetnames(pathname);
+sheetsel = questdlg('Choose a Sheet to plot', ...
+	'Sheet selection', ...
+	sheet(1),sheet(2),'Exit',sheet(1));
+
+switch sheetsel
+    case sheet(1)
+        files = dir(strcat(pwd,'/',sheet(1)));
+    case sheet(2)
+        files = dir(strcat(pwd,'/',sheet(2)));
+    case 'Exit'
+        return
+end
+
+SUPsorterfun(pathname,pathname,sheet(1),sheet(2));
 
 %Delete hidden files from the struct (files that start with a ".")
 files = files(arrayfun(@(x) ~strcmp(x.name(1),'.'),files));
+
 
 %Create a list of samples the user can choose from 
 list = string(); 
@@ -81,58 +97,18 @@ for i = 1:length(files)
     end
 end
 clear("curentname", "name")
-disp(list);
-disp(length(files)+" files and "+length(list)+" samples found");
 
-
-
-%% Ask user how many samples they would like to plot
-ask = true;
-while ask
-    answer = input("How many samples would you like to plot? ",'s');
-    answer = lower(answer);
-    nplot = str2double(answer);
-    %Handle not valid responses to prompt by exiting or throwing and error
-    %message
-    if isnan(nplot)
-        switch answer
-            case "exit"
-                return
-            otherwise
-                disp("Please enter a valid number!")
-        end
-    elseif nplot < length(list)+1
-            ask = false;
-    else
-            disp("There are only "+length(list)+" samples found in this folder.")
-    end
+%% Ask user which files they want to plot
+[indx,tf] = listdlg('PromptString',{'Select a sample.'},'ListString',list);
+if ~tf
+    return
 end
-clear("answer")
-
-%% Ask user the samples they would like to plot
-samplestoplot = strings(nplot,1);
-for i = 1:nplot
-    sfound = false;
-    while ~sfound
-        answer = input("Select sample "+i+": ",'s');
-        if isequal(lower(answer),'exit')
-            return
-        end
-        for n = 1:length(list)
-            if isequal(lower(answer),lower(list(n)))
-                sfound = true;
-                samplestoplot(i) = answer;
-            end
-        end
-        if ~sfound
-            disp("Sample "+answer+" not found. Try again!")
-        end
-    end
+samplestoplot = strings(length(indx),1);
+for i = 1:length(indx)
+    samplestoplot(i) = list(indx(i));
 end
-clear("sfound","ask")
 
-%% Ask user the modes they would like to plot and prepare files of interest
-
+%% prepare files of interest
 
 %if there are more than one samples selected interesect all the properties 
 %to find the ones that are in common
@@ -224,7 +200,6 @@ for j = 1:length(commonmodes)
     lgdh = legend(ax,p,lgd,'Interpreter','none');
     lgdh.FontSize = fontS;
 end
-clear
 
 function col = palette(n,type)
     switch type
@@ -270,5 +245,104 @@ function col = palette(n,type)
             col = flag(n);
         case "white"
             col = white(n);
+    end
+end
+
+
+%% SUPsorter
+% This is a spectral data formatting and sorting function for Raman and FTIR
+% spectral peak position data for Diamond anvil cell experiments for use at
+% Sewanee Under Pressure (SUP) laboratory group. This script converts a
+% pre-made user friendly Excel file that contains the fitted peak positions
+% into a computer friendly list of comma separated .txt files which are
+% convenient for plotting and processing when using MatLab or similar
+% software.
+% SUPplotter.m makes sure that the files are in the appropriate format for
+% plotting by SUPplotter.m or SUPplotter_adv.m
+function [rtarg, ftarg] = SUPsorterfun(rsource,Fsource,rsheetname,fsheetname)
+    
+    % folder in which you want to store your sorted formatted csv data 
+    % Example: "/Users/mategarai/Documents/1_Thompson_Lab/Raman_peaks/"
+    if ~exist(strcat(pwd,'/',rsheetname), 'dir')
+        mkdir(strcat(pwd,'/',rsheetname));
+    end
+    if ~exist(strcat(pwd,'/',fsheetname), 'dir')
+        mkdir(strcat(pwd,'/',fsheetname));
+    end
+
+    rtarget = strcat(pwd,'/',rsheetname,'/');
+    ftarget = strcat(pwd,'/',fsheetname,'/');
+
+    rtarg = rtarget;
+    ftarg = ftarget;
+    
+    %Create tables containing Raman and FTIR files
+    TRaman = readtable(rsource,'Sheet',rsheetname);
+    TFTIR = readtable(Fsource,'Sheet',fsheetname);
+    
+    
+    %Create vectors of just the names of the columns so we can identify which
+    %column is what
+    Ramanvars = string(TRaman.Properties.VariableNames');
+    FTIRvars = string(TFTIR.Properties.VariableNames');
+    
+    %% Determine what samples we have
+    name = split(Ramanvars(1),"_"); %get the first variable and split it at delimiters (temporary)
+    name = name(1); %Get the first entry to name which is the name of the sample
+    
+    % create a list of strings containing the names of all Raman samples
+    Ramansamplenames = name;
+    for i = 2:length(Ramanvars)
+        currentname = split(Ramanvars(i),"_");
+        currentname = currentname(1);
+    
+        if isequal(name,currentname)
+        else
+            Ramansamplenames = [Ramansamplenames,currentname];
+            name = currentname;
+        end
+    end
+    
+    name = split(FTIRvars(1),"_"); %get the first variable and split it at delimiters (temporary)
+    name = name(1); %Get the first entry to name which is the name of the sample
+    % create a list of strings containing the names of all FTIR samples
+    FTIRsamplenames = name;
+    for i = 2:length(FTIRvars)
+        currentname = split(FTIRvars(i),"_");
+        currentname = currentname(1);
+    
+        if isequal(name,currentname)
+        else
+            FTIRsamplenames = [FTIRsamplenames,currentname];
+            name = currentname;
+        end
+    end
+    clear("name","currentname") % clear temporary variables to get rid of clutter
+    
+    
+    %% this creates text files of all the vibration modes for all samples
+    
+    % cycle through raman samples
+    for k = 1:length(Ramansamplenames)
+    for i = 1:length(Ramanvars)
+        samplename = strcat(Ramansamplenames(k),"_");
+        pressdata = strcat(samplename,"P"); % determine which column contains the pressures
+        if startsWith(Ramanvars(i),samplename) && Ramanvars(i) ~= pressdata % if the current column is the sample we're interested in put it in a text file
+            m = [TRaman.(pressdata),TRaman.(i)]; %creates the vector as [Pressure, peak position]
+            writematrix(m,strcat(rtarget,Ramanvars(i),".txt"));
+        end
+    end
+    end
+    
+    % cycle through FTIR samples
+    for k = 1:length(FTIRsamplenames)
+    for i = 1:length(FTIRvars)
+        samplename = strcat(FTIRsamplenames(k),"_");
+        pressdata = strcat(samplename,"P"); % determine which column contains the pressures
+        if startsWith(FTIRvars(i),samplename) && FTIRvars(i) ~= pressdata % if the current column is the sample we're interested in put it in a text file
+            m = [TFTIR.(pressdata),TFTIR.(i)]; %creates the vector as [Pressure, peak position]
+            writematrix(m,strcat(ftarget,FTIRvars(i),".txt"));
+        end
+    end
     end
 end
