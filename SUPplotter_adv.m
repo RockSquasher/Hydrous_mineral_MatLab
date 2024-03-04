@@ -29,10 +29,10 @@
 
 %% USER INPUT
 % plug in the folder location in a string format 
-% ex.:"/Users/mategarai/Documents/1_Thompson_Lab/Raman_peaks"
+% ex.:"/Documents/Raman_peaks"
 % This folder should only contain the comma separated .txt files of the
 % peak data in the format [Pressure1,Peak1; Pressure2, peak2;...]
-pathname = "/Users/mategarai/Documents/1_Thompson_Lab/FTIR_peaks";
+pathname = "";
 
 % Select sample 
 % Specify samples you would like to plot in the form of a string array.
@@ -44,7 +44,7 @@ pathname = "/Users/mategarai/Documents/1_Thompson_Lab/FTIR_peaks";
 % Example: if the file name is SMP3_OH_v13_1.txt the entry in the string
 % array should be "SMP3" or "smp3" as the treats "_" as delimiters in the
 % file name
-Samplenames = ["SMP14","SMP19","SMP16"];
+Samplenames = [];
 
 % Here are some aesthetic details you may change:
 col = "lines"; % colormap of the plots (default MatLab colormaps)

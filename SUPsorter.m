@@ -40,19 +40,19 @@
 %% USER INPUT
 % Enter the source (path and name) of the Excel sheets containing the
 % spectral peak data
-% Example: "/Users/mategarai/Documents/1_Thompson_Lab/MelanteriteSUM.xlsx"
-ramansource = "/Users/mategarai/Documents/1_Thompson_Lab/MelanteriteSUM.xlsx";
-FTIRsource = "/Users/mategarai/Documents/1_Thompson_Lab/MelanteriteSUM.xlsx";
+% Example: "Documents/MelanteriteSUM.xlsx"
+ramansource = "";
+FTIRsource = "";
 
 % Enter the name of the sheet that contains the appropriate data
 % Example: 'Raman'
-ramansheetname = 'Raman';
-FTIRsheetname = 'FTIR';
+ramansheetname = '';
+FTIRsheetname = '';
 
 % Enter the folder in which you want to store your sorted formatted csv data 
 % Example: "/Users/mategarai/Documents/1_Thompson_Lab/Raman_peaks/"
-ramantarget = "/Users/mategarai/Documents/1_Thompson_Lab/Raman_peaks/";
-FTIRtarget = "/Users/mategarai/Documents/1_Thompson_Lab/FTIR_peaks/";
+ramantarget = "";
+FTIRtarget = "";
 
 
 
