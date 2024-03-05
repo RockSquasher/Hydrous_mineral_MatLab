@@ -28,11 +28,19 @@
 
 
 %% USER INPUT
-% plug in the folder location in a string format 
-% ex.:"/Documents/Raman_peaks"
-% This folder should only contain the comma separated .txt files of the
-% peak data in the format [Pressure1,Peak1; Pressure2, peak2;...]
-pathname = "";
+% Enter the source (path and name) of the Excel sheets containing the
+% spectral peak data
+% Example: "Documents/MelanteriteSUM.xlsx"
+ramansource = "/Users/mategarai/Documents/1_Thompson_Lab/MelanteriteSUM.xlsx";
+FTIRsource = "/Users/mategarai/Documents/1_Thompson_Lab/MelanteriteSUM.xlsx";
+
+% Enter the name of the sheet that contains the appropriate data
+% Example: 'Raman'
+ramansheetname = 'Raman';
+FTIRsheetname = 'FTIR';
+
+% Select spectral type 'r' for raman, 'f' for FTIR
+spectr = 'r';
 
 % Select sample 
 % Specify samples you would like to plot in the form of a string array.
@@ -44,7 +52,7 @@ pathname = "";
 % Example: if the file name is SMP3_OH_v13_1.txt the entry in the string
 % array should be "SMP3" or "smp3" as the treats "_" as delimiters in the
 % file name
-Samplenames = [];
+Samplenames = ["SMP3","SMP6"];
 
 % Here are some aesthetic details you may change:
 col = "lines"; % colormap of the plots (default MatLab colormaps)
@@ -66,6 +74,15 @@ clr = true;
 
 
 %% CODE
+
+[ramansource,FTIRsource] = SUPsorterfun(ramansource,FTIRsource,ramansheetname,FTIRsheetname);
+
+switch spectr
+    case 'f'
+        pathname = FTIRsource;
+    case 'r'
+        pathname = ramansource;
+end
 
 % Find the folder specified by the user
 if isequal(lower(pathname), 'exit')
@@ -236,5 +253,103 @@ function col = palette(n,type)
             col = flag(n);
         case "white"
             col = white(n);
+    end
+end
+
+%% SUPsorter
+% This is a spectral data formatting and sorting function for Raman and FTIR
+% spectral peak position data for Diamond anvil cell experiments for use at
+% Sewanee Under Pressure (SUP) laboratory group. This script converts a
+% pre-made user friendly Excel file that contains the fitted peak positions
+% into a computer friendly list of comma separated .txt files which are
+% convenient for plotting and processing when using MatLab or similar
+% software.
+% SUPplotter.m makes sure that the files are in the appropriate format for
+% plotting by SUPplotter.m or SUPplotter_adv.m
+function [rtarg, ftarg] = SUPsorterfun(rsource,Fsource,rsheetname,fsheetname)
+    
+    % folder in which you want to store your sorted formatted csv data 
+    % Example: "/Users/mategarai/Documents/1_Thompson_Lab/Raman_peaks/"
+    if ~exist(strcat(pwd,'/',rsheetname), 'dir')
+        mkdir(strcat(pwd,'/',rsheetname));
+    end
+    if ~exist(strcat(pwd,'/',fsheetname), 'dir')
+        mkdir(strcat(pwd,'/',fsheetname));
+    end
+
+    rtarget = strcat(pwd,'/',rsheetname,'/');
+    ftarget = strcat(pwd,'/',fsheetname,'/');
+
+    rtarg = rtarget;
+    ftarg = ftarget;
+    
+    %Create tables containing Raman and FTIR files
+    TRaman = readtable(rsource,'Sheet',rsheetname);
+    TFTIR = readtable(Fsource,'Sheet',fsheetname);
+    
+    
+    %Create vectors of just the names of the columns so we can identify which
+    %column is what
+    Ramanvars = string(TRaman.Properties.VariableNames');
+    FTIRvars = string(TFTIR.Properties.VariableNames');
+    
+    %% Determine what samples we have
+    name = split(Ramanvars(1),"_"); %get the first variable and split it at delimiters (temporary)
+    name = name(1); %Get the first entry to name which is the name of the sample
+    
+    % create a list of strings containing the names of all Raman samples
+    Ramansamplenames = name;
+    for i = 2:length(Ramanvars)
+        currentname = split(Ramanvars(i),"_");
+        currentname = currentname(1);
+    
+        if isequal(name,currentname)
+        else
+            Ramansamplenames = [Ramansamplenames,currentname];
+            name = currentname;
+        end
+    end
+    
+    name = split(FTIRvars(1),"_"); %get the first variable and split it at delimiters (temporary)
+    name = name(1); %Get the first entry to name which is the name of the sample
+    % create a list of strings containing the names of all FTIR samples
+    FTIRsamplenames = name;
+    for i = 2:length(FTIRvars)
+        currentname = split(FTIRvars(i),"_");
+        currentname = currentname(1);
+    
+        if isequal(name,currentname)
+        else
+            FTIRsamplenames = [FTIRsamplenames,currentname];
+            name = currentname;
+        end
+    end
+    clear("name","currentname") % clear temporary variables to get rid of clutter
+    
+    
+    %% this creates text files of all the vibration modes for all samples
+    
+    % cycle through raman samples
+    for k = 1:length(Ramansamplenames)
+    for i = 1:length(Ramanvars)
+        samplename = strcat(Ramansamplenames(k),"_");
+        pressdata = strcat(samplename,"P"); % determine which column contains the pressures
+        if startsWith(Ramanvars(i),samplename) && Ramanvars(i) ~= pressdata % if the current column is the sample we're interested in put it in a text file
+            m = [TRaman.(pressdata),TRaman.(i)]; %creates the vector as [Pressure, peak position]
+            writematrix(m,strcat(rtarget,Ramanvars(i),".txt"));
+        end
+    end
+    end
+    
+    % cycle through FTIR samples
+    for k = 1:length(FTIRsamplenames)
+    for i = 1:length(FTIRvars)
+        samplename = strcat(FTIRsamplenames(k),"_");
+        pressdata = strcat(samplename,"P"); % determine which column contains the pressures
+        if startsWith(FTIRvars(i),samplename) && FTIRvars(i) ~= pressdata % if the current column is the sample we're interested in put it in a text file
+            m = [TFTIR.(pressdata),TFTIR.(i)]; %creates the vector as [Pressure, peak position]
+            writematrix(m,strcat(ftarget,FTIRvars(i),".txt"));
+        end
+    end
     end
 end
