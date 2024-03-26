@@ -1,12 +1,11 @@
 %% Welcome to SUP peakplotter
-% This script was written by Mate Garai C'24 in 02/2024
+% This script was written by Mate Garai C'24 in 03/2024
 % This script is the beginner friendly version of SUPplotter. For a faster
 % version use SUPplotter_adv.m. This script plots Raman, FTIR or related peak 
 % position data as a function of pressure. 
-% Pre-processing of the data should be done by "SUPsorter.m" script
+% Pre-processing of the data is done by "SUPsorterfun" function
 % which makes sure that the data read by this script is in comma separated
 % .txt files in the form: [Pressure1,Peak1; Pressure2, peak2;...]
-% This is a new line of comment
 % Example:
 %
 % 0,3466.5
@@ -64,6 +63,9 @@ end
 pathname = strcat(pathname,file);
 disp(pathname);
 sheet = sheetnames(pathname);
+
+SUPsorterfun(pathname,pathname,sheet(1),sheet(2));
+
 sheetsel = questdlg('Choose a Sheet to plot', ...
 	'Sheet selection', ...
 	sheet(1),sheet(2),'Exit',sheet(1));
@@ -76,12 +78,8 @@ switch sheetsel
     case 'Exit'
         return
 end
-
-SUPsorterfun(pathname,pathname,sheet(1),sheet(2));
-
 %Delete hidden files from the struct (files that start with a ".")
 files = files(arrayfun(@(x) ~strcmp(x.name(1),'.'),files));
-
 
 %Create a list of samples the user can choose from 
 list = string(); 
