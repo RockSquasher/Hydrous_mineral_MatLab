@@ -1,7 +1,7 @@
 %% Welcome to SUP peakplotter
 % This script was written by Mate Garai C'24 in 03/2024
 % This script is the beginner friendly version of SUPplotter. For a faster
-% version use SUPplotter_adv.m. This script plots Raman, FTIR or related peak 
+% version use SUPplotter_adv.m. This script plots Raman and FTIR peak 
 % position data as a function of pressure. 
 % Pre-processing of the data is done by "SUPsorterfun" function
 % which makes sure that the data read by this script is in comma separated
@@ -42,9 +42,10 @@ col = "cool"; % colormap of the plots (default MatLab colormaps)
 fontS = 14; % legend font size
 fontSax = 13; % axis font size
 boxed = true; % boxes your plot
-msize = 40; % Marker size
+msize = 50; % Marker size
 xaxisT = "P (GPa)"; % x axis title
 yaxisT = ""; % y axis title
+aspratio = [1,1,1]; %plot aspect ratio
 
 %custom colormap (leave empty if you don't need it)
 c = [];
@@ -82,25 +83,27 @@ end
 files = files(arrayfun(@(x) ~strcmp(x.name(1),'.'),files));
 
 %Create a list of samples the user can choose from 
-list = string(); 
+list = strings(length(files),1);
+declist = strings(0);
 for i = 1:length(files)
     name = split(files(i).name,"_");
-    name = name(1);
-    if i == 1
-        currentname = name;
-        list(1)=name{1};
-    elseif ~isequal(currentname,name)
-        list = [list;name{1}];
-        currentname = name;
+    name = name{1};
+    if isequal(lower(name(end)),'d')
+        declist = [declist,name];
+        name = name(1:end-1);
     end
+    list(i) = name;
+    
 end
-clear("curentname", "name")
+list = unique(list);
+declist = unique(declist);
 
 %% Ask user which files they want to plot
 [indx,tf] = listdlg('PromptString',{'Select a sample.'},'ListString',list);
 if ~tf
     return
 end
+% store user selected samples in a string vector
 samplestoplot = strings(length(indx),1);
 for i = 1:length(indx)
     samplestoplot(i) = list(indx(i));
@@ -110,42 +113,44 @@ end
 
 %if there are more than one samples selected interesect all the properties 
 %to find the ones that are in common
-Samplenames = samplestoplot;
+Samplenames = samplestoplot; % create a separate list for the legend before making names lowercase
 samplestoplot = lower(samplestoplot);
 filesofinterest  = files(1);
-if length(samplestoplot)>1
-comptable = cell(0);
-for i = 1:length(samplestoplot)
-    props = strings(0);
-    temp = "";
-    for j = 1:length(files)
-        if startsWith(string(lower(files(j).name)),strcat(samplestoplot(i),'_'))
-            prop = split(lower(files(j).name),["_","."]);
-            prop = strcat(prop(2),"_",prop(3));
 
-            filesofinterest = [filesofinterest,files(j)];
-            if ~isequal(temp,prop)
-                props = [props,prop];
-                temp = prop;
+% Determine if there are modes in common
+if length(samplestoplot)>1 % if user selected more samples find commonalities
+    comptable = cell(0);
+    for i = 1:length(samplestoplot)
+        props = strings(0);
+        temp = "";
+        for j = 1:length(files)
+            if startsWith(string(lower(files(j).name)),strcat(samplestoplot(i),'_')) || startsWith(string(lower(files(j).name)),strcat(samplestoplot(i),'d_'))
+                prop = split(lower(files(j).name),["_","."]);
+                prop = strcat(prop(2),"_",prop(3));
+    
+                filesofinterest = [filesofinterest,files(j)];
+                if ~isequal(temp,prop)
+                    props = [props,prop];
+                    temp = prop;
+                end
             end
         end
+        comptable = [comptable;{props'}];
     end
-    clear('temp')
-    comptable = [comptable;{props'}];
+    
+    commonmodes = comptable{1};
+    for i = 2:length(comptable)
+        commonmodes = intersect(commonmodes,comptable{i});
+    end
+    disp(commonmodes);
+    disp(length(commonmodes)+" modes found in common");
 end
-
-commonmodes = comptable{1};
-for i = 2:length(comptable)
-    commonmodes = intersect(commonmodes,comptable{i});
-end
-disp(commonmodes);
-disp(length(commonmodes)+" modes found in common");
-
-else
+% If user only selected one sample just plot all modes
+if length(samplestoplot) == 1
     commonmodes = strings(0);
     temp = "";
     for i = 1:length(files)
-        if startsWith(string(lower(files(i).name)),strcat(samplestoplot(1),'_'))
+        if startsWith(string(lower(files(i).name)),strcat(samplestoplot(1),'_')) || startsWith(string(lower(files(i).name)),strcat(samplestoplot(1),'d_'))
             prop = split(lower(files(i).name),["_","."]);
             prop = strcat(prop(2),"_",prop(3));
             filesofinterest = [filesofinterest,files(i)];
@@ -157,12 +162,18 @@ else
     end
     disp(commonmodes);
     disp(length(commonmodes)+" modes found");
+    clear('temp')
 end
 
 %% Plot the selected modes
+
+% Add decompression data
+
+
+
 lgd = cell(length(samplestoplot),1);
 for j = 1:length(commonmodes)
-
+    % set up figure properties
     fig = figure();
     ax = axes(fig);
     hold(ax,'on');
@@ -174,18 +185,27 @@ for j = 1:length(commonmodes)
         box(ax,"on")
     end
     fontsize(ax,fontSax,'points')
-    
+    pbaspect(ax,aspratio);
+
     p = gobjects(0);
     ind = 0;
     for i = 1:length(samplestoplot)
+        % if no color palette is specified, use the function that creates
+        % one
         if isempty(c)
             c = palette(length(samplestoplot),col);
         end
         for k = 1:length(filesofinterest)
-            if startsWith(string(lower(filesofinterest(k).name)),strcat(samplestoplot(i),'_',commonmodes(j)))
+            if startsWith(string(lower(filesofinterest(k).name)),strcat(samplestoplot(i),'_',commonmodes(j))) || startsWith(string(lower(filesofinterest(k).name)),strcat(samplestoplot(i),'d_',commonmodes(j)))
                 path = strcat(filesofinterest(k).folder,"/",filesofinterest(k).name);
                 M = readmatrix(path);
-                pt = scatter(ax,M(:,1),M(:,2),msize,'filled',MarkerFaceColor=c(i,:));
+                if startsWith(string(lower(filesofinterest(k).name)),strcat(samplestoplot(i),'d_',commonmodes(j)))
+                    pt = scatter(ax,M(:,1),M(:,2),msize,'LineWidth',2,MarkerEdgeColor=c(i,:));
+                    
+                else
+                    pt = scatter(ax,M(:,1),M(:,2),msize,'filled',MarkerFaceColor=c(i,:));
+                    
+                end
 
                 if ind ~= i
                     p = [p,pt];
@@ -268,11 +288,11 @@ function [rtarg, ftarg] = SUPsorterfun(rsource,Fsource,rsheetname,fsheetname)
         mkdir(strcat(pwd,'/',fsheetname));
     end
 
-    rtarget = strcat(pwd,'/',rsheetname,'/');
-    ftarget = strcat(pwd,'/',fsheetname,'/');
+    rtarget = strcat(pwd,'/',rsheetname,'/'); %raman target folder
+    ftarget = strcat(pwd,'/',fsheetname,'/'); %FTIR target folder
 
-    rtarg = rtarget;
-    ftarg = ftarget;
+    rtarg = rtarget; %output raman target folder name
+    ftarg = ftarget; %output FTIR target folder name
     
     %Create tables containing Raman and FTIR files
     TRaman = readtable(rsource,'Sheet',rsheetname);
