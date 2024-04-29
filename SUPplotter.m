@@ -3,6 +3,37 @@
 % This script is the beginner friendly version of SUPplotter. For a faster
 % version use SUPplotter_adv.m. This script plots Raman and FTIR peak 
 % position data as a function of pressure. 
+
+% The only thing you need to run this script is a summarized excel sheet 
+% containing the data points to be plotted in a very particular formatting 
+% please see MelanteriteSUM.xlsx for reference:
+
+% Make sure every sample has a Pressure column titled in the format:
+% SAMPLENAME_P
+% Example: SMP3_P
+% This column should contain all the pressure steps for the specified 
+% sample
+% Make sure each peak gets their own column (if the peak splits, create a 
+% new column). The column title should be:
+% SAMPLENAME_MOLECULE_VIBRATIONMODE_PEAKNUMBER
+% Example: SMP3_SO_v1_1
+% Decompression data should be stored in different columns with the column 
+% for the pressure having a title:
+% SAMPLENAMED_P (D for decompression)
+% Example: SMP3D_P
+% Make sure each decompression peak gets their own column (if the peak 
+% splits, create a new column). The column title should be:
+% SAMPLENAMED_MOLECULE_VIBRATIONMODE_PEAKNUMBER
+% Example: SMP3D_SO_v1_1
+% Have the excel file on your computer so you can select it when you run 
+% the script
+% If you are ready to plot and have the approprioate pre-processing down 
+% just hit start and follow the prompts
+% The script should automatically determine which peaks are in common for 
+% the selected samples. If there are no vibrational modes in common it will
+% tell you so and not plot anything. If you only select one sample, it plot
+% all the vibrational modes for that one sample.
+
 % Pre-processing of the data is done by "SUPsorterfun" function
 % which makes sure that the data read by this script is in comma separated
 % .txt files in the form: [Pressure1,Peak1; Pressure2, peak2;...]
@@ -16,22 +47,6 @@
 % 1.1,3463.3
 % 1.31,3461.5
 % ........
-%
-% The title of these files also has to be in a particular formatting as it
-% is essential for the script to identify what it is working with.
-% The title of the files should be as such:
-% Samplename_molecule_vibrationmode_peaknumber.txt
-% Example: SMP3_OH_v13_1.txt
-% If there is only one peak corresponding to a vibrational mode still
-% label it as *_1.txt
-
-% When specifying samples you would like to plot make sure the selected 
-% samples exist and the sample names correspond to
-% the whatever is before the "_" in the file name
-% Example: if the file name is SMP3_OH_v13_1.txt your entry 
-% should be "SMP3" or "smp3" as the treats "_" as delimiters in the
-% file name
-
 
 % If you are ready to plot and have the approprioate pre-processing down
 % just hit start and follow the prompt
