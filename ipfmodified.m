@@ -348,11 +348,7 @@ if isscalar(key)
             center=(max(xx)+min(xx))/2;
             NumTrials=1;
             window=max(xx)-min(xx);
-            if Shape==16||Shape==17 % Fixed-position shapes
-                fixedparameters=FIXEDPARAMETERS;
-            else
-                fixedparameters=FIXEDPARAMETERS;
-            end
+            fixedparameters=FIXEDPARAMETERS;
             subplot(2,1,2);title('Working....');drawnow
             [FitResults,MeanFitError]=peakfit([X',Y'],center,window,NumPeaks,shapesvector,extra,NumTrials,start,BaselineMode,FIXEDPARAMETERS,1,BIPOLAR,MINWIDTH,DELTA,CLIPHEIGHT);
         case 99
@@ -987,11 +983,7 @@ if isscalar(key)
             center=(max(xx)+min(xx))/2;
             window=max(xx)-min(xx);
 %            disp(['Calculating best of ' num2str(NumTrials) ' trial fits....' ])
-             if Shape==16||Shape==17 % Fixed-position shapes
-                    fixedparameters=FIXEDPARAMETERS;
-                else
-                     fixedparameters=FIXEDPARAMETERS;
-             end 
+            fixedparameters=FIXEDPARAMETERS;
             FirstGuess=[];
             sizeFitResults=size(FitResults); % <<<<<< testing
             for peaknumber=1:NumPeaks
@@ -1115,9 +1107,9 @@ if isscalar(key)
                 end
             end
             disp(FitResults)
-            errmat = zeros(height(FitResults),2);
-            errmat(1,:) = [MeanFitError(2),MeanFitError(1)];
-            writematrix([FitResults,errmat],'testresults.csv')
+
+            fitres = ["Peak#","Position","Height","Width","Area";FitResults];
+            writematrix(fitres.','ipfresults.csv')
             if BaselineMode==3
                 disp([ 'Baseline= ' num2str(PEAKHEIGHTS(1)) ]);
             end
